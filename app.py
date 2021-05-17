@@ -15,7 +15,7 @@ def login():
 
 @app.route("/loginrequest", methods=["POST"])
 def loginRequest():
-    response = requests.post("http://127.0.0.1:5000/login", json=request.form)
+    response = requests.post("https://mattappchat.herokuapp.com/login", json=request.form)
     if response.json()["result"] < 0:
         return "login failed smh"
     session["user_id"] = response.json()["result"]
@@ -23,11 +23,11 @@ def loginRequest():
 
 @app.route("/home")
 def home():
-    data = requests.get("http://127.0.0.1:5000/groups")
+    data = requests.get("https://mattappchat.herokuapp.com/groups")
     groups = []
     for d in data.json():
         groups.append(Groups(d["id"], d["name"], d["description"], d["image"], d["created_time"]))
-    data = requests.get("http://127.0.0.1:5000/users")
+    data = requests.get("https://mattappchat.herokuapp.com/users")
     users = []
     other = request.args.get("other")
     isGroup = request.args.get("isGroup")
@@ -43,11 +43,11 @@ def home():
             users.append(User(u["id"], u["username"], u["password"], u["image"], u["createdTime"]))
     messages = []
     if not isGroup:
-        data = requests.post("http://127.0.0.1:5000/messages", json={"user1": user_id, "user2": other})
+        data = requests.post("https://mattappchat.herokuapp.com/messages", json={"user1": user_id, "user2": other})
         for d in data.json():
             messages.append(Message(d["id"], d["username"], d["userImage"], d["message"], d["time"]))
     else:
-        data = requests.post("http://127.0.0.1:5000/groupmessage", json={"groupId": other})
+        data = requests.post("https://mattappchat.herokuapp.com/groupmessage", json={"groupId": other})
         for d in data.json():
             messages.append(Message(d["id"], d["username"], d["userImage"], d["message"], d["time"]))
     a = 0
@@ -69,7 +69,7 @@ def registerRequest():
     session["passcode"] = code
     d = request.form.to_dict()
     d["passcode"] = code
-    response = requests.post("http://127.0.0.1:5000/verify", json=d)
+    response = requests.post("https://mattappchat.herokuapp.com/verify", json=d)
     if response.json()["result"] == -1:
         return "User Already Taken :("
     elif response.json()["result"] == -2:
@@ -80,7 +80,7 @@ def registerRequest():
 def verifyRequest():
     code = request.form["passcode"]
     if code == session["passcode"]:
-        response = requests.post("http://127.0.0.1:5000/register", json={"username": session["username"], "password": session["password"]})
+        response = requests.post("https://mattappchat.herokuapp.com/register", json={"username": session["username"], "password": session["password"]})
         if response.json()["result"] > 0:
             return "yay"
     return "Incorrect Passcode"
@@ -98,9 +98,9 @@ def message():
     if isGroup == "0":
         d = request.form.to_dict()
         d["user1"] = session["user_id"]
-        response = requests.post("http://127.0.0.1:5000/send", json=d)
+        response = requests.post("https://mattappchat.herokuapp.com/send", json=d)
     else:
-        response = requests.post("http://127.0.0.1:5000/sendgroupmessage", json={"groupId": request.form["user2"], "userId": session["user_id"], "message": request.form["message"]})
+        response = requests.post("https://mattappchat.herokuapp.com/sendgroupmessage", json={"groupId": request.form["user2"], "userId": session["user_id"], "message": request.form["message"]})
     return "yay"
 
 @app.route("/creategrouppage")
@@ -110,13 +110,13 @@ def createGroupPage():
 @app.route("/creategroup", methods=["POST"])
 def createGroup():
     d = request.form.to_dict()
-    data = requests.post("http://127.0.0.1:5000/creategroup", json=d)
+    data = requests.post("https://mattappchat.herokuapp.com/creategroup", json=d)
     return "yay"
 
 @app.route("/settings")
 def settings():
     id = session["user_id"]
-    data = requests.get("http://127.0.0.1:5000/user/" + str(id))
+    data = requests.get("https://mattappchat.herokuapp.com/user/" + str(id))
     data = data.json()
     print(data)
     user = User(data["id"], data["username"], data["password"], data["image"], data["createdTime"])
@@ -125,7 +125,7 @@ def settings():
 @app.route("/updateUser", methods=["POST"])
 def updateUser():
     id = session["user_id"]
-    data = requests.get("http://127.0.0.1:5000/user/" + str(id))
+    data = requests.get("https://mattappchat.herokuapp.com/user/" + str(id))
     data = data.json()
     username = ""
     image = ""
@@ -146,7 +146,11 @@ def updateUser():
         return "Wow There is Nothing to Update"
     if oldPassword != data["password"]:
         return "Old Password Doesn't Match"
-    requests.post("http://127.0.0.1:5000/updateuserdata", json={"newPassword": newPassword, "username": username, "image": image, "userId": id})
+    requests.post("https://mattappchat.herokuapp.com/updateuserdata", json={"newPassword": newPassword, "username": username, "image": image, "userId": id})
     return "yay"
 
-app.run(port=5001)
+
+if __name__ == '__main__':
+
+    # Threaded option to enable multiple instances for multiple user access support
+    app.run(threaded=True, port=5000)
